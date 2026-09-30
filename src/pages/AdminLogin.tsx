@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Shield, Eye, EyeOff, Lock, ArrowLeft } from 'lucide-react';
-import { verifyAdminLogin } from '../lib/supabase';
+import { Eye, EyeOff, Lock, ArrowLeft } from 'lucide-react';
+import { verifyAdminLogin, logoSrc } from '../lib/supabase';
 
 interface Props {
   onLogin: () => void;
@@ -46,9 +46,7 @@ export default function AdminLogin({ onLogin, onBack }: Props) {
 
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
           <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-6 sm:px-8 py-8 sm:py-10 text-center">
-            <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-white/10 rounded-2xl mb-4">
-              <Shield className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
-            </div>
+            <img src={logoSrc} alt="School logo" className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-contain bg-white/10 p-1.5 mb-4 mx-auto" />
             <h1 className="text-lg sm:text-xl font-bold text-white">Admin Dashboard</h1>
             <p className="text-slate-400 text-xs sm:text-sm mt-1">Attendance Record System</p>
           </div>
