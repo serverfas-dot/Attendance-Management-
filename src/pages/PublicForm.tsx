@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { CheckCircle, Clock, XCircle, ChevronDown, MapPin, Navigation, Wifi } from 'lucide-react';
-import { supabase, AdminSettings, Teacher, Session, logoSrc } from '../lib/supabase';
+import { supabase, AdminSettings, StaffType, Teacher, Session, logoSrc } from '../lib/supabase';
 
 function isFormOpen(settings: AdminSettings): { open: boolean; reason: string } {
   if (!settings.form_open) return { open: false, reason: 'The form is currently closed by the administrator.' };
@@ -41,6 +41,7 @@ export default function PublicForm() {
   const [settings, setSettings] = useState<AdminSettings | null>(null);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [selectedStaffType, setSelectedStaffType] = useState<StaffType>('Academic');
   const [selectedTeacher, setSelectedTeacher] = useState('');
   const [selectedSession, setSelectedSession] = useState('');
   const [loading, setLoading] = useState(true);
@@ -202,6 +203,9 @@ export default function PublicForm() {
   const meterPercent = liveDistance !== null
     ? Math.max(0, Math.min(100, (1 - liveDistance / (radius * 2)) * 100))
     : 0;
+  const filteredTeachers = teachers.filter(teacher =>
+    teacher.staff_type === selectedStaffType || teacher.staff_type === 'Both'
+  );
 
   if (submitted) {
     return (
@@ -280,6 +284,21 @@ export default function PublicForm() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
               <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Staff Type</label>
+                <div className="relative">
+                  <select
+                    value={selectedStaffType}
+                    onChange={e => { setSelectedStaffType(e.target.value as StaffType); setSelectedTeacher(''); }}
+                    className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent transition-all text-sm"
+                  >
+                    <option value="Admin">Admin</option>
+                    <option value="Academic">Academic</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Session</label>
                 <div className="relative">
                   <select
@@ -304,8 +323,8 @@ export default function PublicForm() {
                     onChange={e => setSelectedTeacher(e.target.value)}
                     className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent transition-all text-sm"
                   >
-                    <option value="">-- Select Your Name --</option>
-                    {teachers.map(t => (
+                    <option value="">{filteredTeachers.length > 0 ? '-- Select Your Name --' : 'No staff in this category'}</option>
+                    {filteredTeachers.map(t => (
                       <option key={t.id} value={t.name}>{t.name}</option>
                     ))}
                   </select>

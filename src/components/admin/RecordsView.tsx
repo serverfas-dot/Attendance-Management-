@@ -33,8 +33,8 @@ export default function RecordsView() {
 
   useEffect(() => {
     Promise.all([
-      supabase.from('sessions').select('*').eq('active', true).order('sort_order'),
-      supabase.from('teachers').select('*').eq('active', true).order('sort_order'),
+      supabase.from('sessions').select('*').order('sort_order'),
+      supabase.from('teachers').select('*').order('sort_order'),
     ]).then(([{ data: s }, { data: t }]) => {
       if (s) setSessions(s);
       if (t) setTeachers(t);

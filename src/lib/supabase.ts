@@ -29,9 +29,12 @@ export interface AdminSettings {
   updated_at: string;
 }
 
+export type StaffType = 'Admin' | 'Academic' | 'Both';
+
 export interface Teacher {
   id: string;
   name: string;
+  staff_type: StaffType;
   active: boolean;
   sort_order: number;
   created_at: string;

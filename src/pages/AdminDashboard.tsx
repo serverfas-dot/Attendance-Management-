@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  BarChart3, Users, List, Settings, Clock, Database,
+  BarChart3, Users, List, Settings, Clock, Database, History,
   LogOut, Calendar, ChevronRight, Menu, X, MapPin
 } from 'lucide-react';
 import { supabase, AdminSettings, logoSrc } from '../lib/supabase';
@@ -11,8 +11,9 @@ import SessionsManager from '../components/admin/SessionsManager';
 import TimeSettings from '../components/admin/TimeSettings';
 import LocationSettings from '../components/admin/LocationSettings';
 import BackupRestore from '../components/admin/BackupRestore';
+import StaffHistory from '../components/admin/StaffHistory';
 
-type Tab = 'records' | 'form' | 'teachers' | 'sessions' | 'time' | 'location' | 'backup';
+type Tab = 'records' | 'staff-history' | 'form' | 'teachers' | 'sessions' | 'time' | 'location' | 'backup';
 
 interface Props {
   onLogout: () => void;
@@ -20,6 +21,7 @@ interface Props {
 
 const navItems: { id: Tab; label: string; icon: React.ReactNode; sub: string }[] = [
   { id: 'records', label: 'Records', icon: <BarChart3 className="w-4 h-4" />, sub: 'Daily, Monthly, Yearly' },
+  { id: 'staff-history', label: 'Staff History', icon: <History className="w-4 h-4" />, sub: 'Individual attendance reports' },
   { id: 'form', label: 'Form Settings', icon: <Settings className="w-4 h-4" />, sub: 'Heading, fields, open/close' },
   { id: 'teachers', label: 'Teachers', icon: <Users className="w-4 h-4" />, sub: 'Manage teacher names' },
   { id: 'sessions', label: 'Sessions', icon: <List className="w-4 h-4" />, sub: 'Manage session types' },
@@ -163,6 +165,7 @@ export default function AdminDashboard({ onLogout }: Props) {
         {/* Page content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
           {activeTab === 'records' && <RecordsView />}
+          {activeTab === 'staff-history' && <StaffHistory />}
           {activeTab === 'form' && <FormSettings settings={settings} onUpdate={loadSettings} />}
           {activeTab === 'teachers' && <TeachersManager />}
           {activeTab === 'sessions' && <SessionsManager />}
