@@ -75,6 +75,7 @@ export default function StaffHistory() {
   const today = localDateValue(new Date());
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [latestSessionDates, setLatestSessionDates] = useState<Record<string, string>>({});
   const [sessionId, setSessionId] = useState('');
   const [reportMode, setReportMode] = useState<ReportMode>('all');
   const [staffId, setStaffId] = useState('');
@@ -97,17 +98,41 @@ export default function StaffHistory() {
   useEffect(() => {
     Promise.all([
       supabase.from('teachers').select('*').order('sort_order'),
-      supabase.from('sessions').select('*').eq('active', true).order('sort_order'),
-    ]).then(([teacherResult, sessionResult]) => {
-      if (teacherResult.error || sessionResult.error) {
+      supabase.from('sessions').select('*').order('sort_order'),
+      supabase.from('attendance').select('session_name, submitted_at').order('submitted_at', { ascending: false }),
+    ]).then(([teacherResult, sessionResult, attendanceResult]) => {
+      if (teacherResult.error || sessionResult.error || attendanceResult.error) {
         setError('Unable to load staff and session choices.');
       } else {
         const loadedTeachers = teacherResult.data ?? [];
         const loadedSessions = sessionResult.data ?? [];
+        const activity = attendanceResult.data ?? [];
+        const latestDates: Record<string, string> = {};
+        activity.forEach(record => {
+          if (!latestDates[record.session_name]) latestDates[record.session_name] = record.submitted_at;
+        });
+        const knownNames = new Set(loadedSessions.map(session => session.name));
+        const historicalSessions: Session[] = Object.keys(latestDates)
+          .filter(name => !knownNames.has(name))
+          .map((name, index) => ({
+            id: `historical-${index}-${name}`,
+            name,
+            active: false,
+            sort_order: loadedSessions.length + index,
+            created_at: latestDates[name],
+          }));
+        const allSessions = [...loadedSessions, ...historicalSessions];
+        const initialSession = allSessions[0];
         setTeachers(loadedTeachers);
-        setSessions(loadedSessions);
-        setSessionId(loadedSessions[0]?.id ?? '');
+        setSessions(allSessions);
+        setLatestSessionDates(latestDates);
+        setSessionId(initialSession?.id ?? '');
         setStaffId(loadedTeachers[0]?.id ?? '');
+        const latestDate = initialSession ? latestDates[initialSession.name] : undefined;
+        if (latestDate) {
+          setSelectedMonth(latestDate.slice(0, 7));
+          setSelectedYear(latestDate.slice(0, 4));
+        }
       }
       setLoadingOptions(false);
     });
@@ -115,6 +140,17 @@ export default function StaffHistory() {
 
   const selectedSession = sessions.find(session => session.id === sessionId);
   const selectedTeacher = teachers.find(teacher => teacher.id === staffId);
+
+  function chooseSession(nextSessionId: string) {
+    setSessionId(nextSessionId);
+    setSelectedDate('');
+    const nextSession = sessions.find(session => session.id === nextSessionId);
+    const latestDate = nextSession ? latestSessionDates[nextSession.name] : undefined;
+    if (latestDate) {
+      setSelectedMonth(latestDate.slice(0, 7));
+      setSelectedYear(latestDate.slice(0, 4));
+    }
+  }
 
   useEffect(() => {
     if (!selectedSession || range.start > range.end) {
@@ -228,9 +264,10 @@ export default function StaffHistory() {
         <div className="grid gap-3 md:grid-cols-2">
           <label className="block">
             <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 mb-2"><Users className="w-3.5 h-3.5" /> Session</span>
-            <select value={sessionId} onChange={event => { setSessionId(event.target.value); setSelectedDate(''); }} disabled={loadingOptions} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select value={sessionId} onChange={event => chooseSession(event.target.value)} disabled={loadingOptions} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
               {sessions.map(session => <option key={session.id} value={session.id}>{session.name}</option>)}
             </select>
+            {selectedSession && <p className="text-xs text-slate-400 mt-1.5">{latestSessionDates[selectedSession.name] ? `Latest attendance: ${formatDate(latestSessionDates[selectedSession.name].slice(0, 10))}` : 'No attendance records yet'}</p>}
           </label>
           <label className="block">
             <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 mb-2"><UserRound className="w-3.5 h-3.5" /> Report for</span>
